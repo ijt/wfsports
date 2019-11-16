@@ -51,7 +51,7 @@ func run(command, filename string) error {
 func start(filename string) error {
 	recs, err := getRecords(filename)
 	if err != nil {
-		return errors.Wrapf(err, "getting records")
+		return errors.Wrap(err, "getting records")
 	}
 
 	// Randomize order of the names by making them the keys of a map.
@@ -85,7 +85,7 @@ var roundRx = regexp.MustCompile(`round(\d+).csv`)
 func next(doneRoundFilename string) error {
 	recs, err := getRecords(doneRoundFilename)
 	if err != nil {
-		return errors.Wrapf(err, "getting records")
+		return errors.Wrap(err, "getting records")
 	}
 
 	// Get the winners of the done round, and randomize their order by
