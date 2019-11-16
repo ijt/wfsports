@@ -111,7 +111,7 @@ func next(doneRoundFilename string) error {
 		}
 		k, err := strconv.Atoi(m[1])
 		if err != nil {
-			return fmt.Errorf("given filename %s has an integer part that somehow doesn't parse (%v). This is a bug.", doneRoundFilename, err)
+			return fmt.Errorf("given filename %s has an integer part that somehow doesn't parse (%v), probably a bug", doneRoundFilename, err)
 		}
 
 		roundFilename := fmt.Sprintf("round%d.csv", k+1)
