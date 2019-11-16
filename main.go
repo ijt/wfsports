@@ -64,8 +64,17 @@ func start(filename string) error {
 		names = append(names, name)
 	}
 
-	if err := generateRoundFile("round1.csv", names); err != nil {
-		return errors.Wrap(err, "generating round file")
+	switch len(names) {
+	case 0:
+		return errors.New("no players listed")
+	case 1:
+		fmt.Println(names[0], "is the winner!")
+	default:
+		roundFilename := "round1.csv"
+		if err := generateRoundFile(roundFilename, names); err != nil {
+			return errors.Wrap(err, "generating round file")
+		}
+		fmt.Println("wrote", roundFilename)
 	}
 
 	return nil
@@ -90,18 +99,26 @@ func next(doneRoundFilename string) error {
 		names = append(names, name)
 	}
 
-	m := roundRx.FindStringSubmatch(doneRoundFilename)
-	if len(m) != 2 {
-		return fmt.Errorf("given filename %s failed to match pattern %s", doneRoundFilename, roundRx)
-	}
-	k, err := strconv.Atoi(m[1])
-	if err != nil {
-		return fmt.Errorf("given filename %s has an integer part that somehow doesn't parse (%v). This is a bug.", doneRoundFilename, err)
-	}
+	switch len(names) {
+	case 0:
+		return errors.New("no players listed")
+	case 1:
+		fmt.Println(names[0], "is the winner!")
+	default:
+		m := roundRx.FindStringSubmatch(doneRoundFilename)
+		if len(m) != 2 {
+			return fmt.Errorf("given filename %s failed to match pattern %s", doneRoundFilename, roundRx)
+		}
+		k, err := strconv.Atoi(m[1])
+		if err != nil {
+			return fmt.Errorf("given filename %s has an integer part that somehow doesn't parse (%v). This is a bug.", doneRoundFilename, err)
+		}
 
-	roundFilename := fmt.Sprintf("round%d.csv", k+1)
-	if err := generateRoundFile(roundFilename, names); err != nil {
-		return errors.Wrap(err, "generating round file")
+		roundFilename := fmt.Sprintf("round%d.csv", k+1)
+		if err := generateRoundFile(roundFilename, names); err != nil {
+			return errors.Wrap(err, "generating round file")
+		}
+		fmt.Println("wrote", roundFilename)
 	}
 
 	return nil
