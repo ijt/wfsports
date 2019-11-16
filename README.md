@@ -28,3 +28,29 @@ $ wfsports show roundN.csv
 $ open table.html
 ```
 
+## 10 rounds of random pairing followed by selecting the top 32 players for
+## single elimination finals
+
+Start by running the following:
+```
+$ for i in $(seq 10); do wfsports -outround=$i start names.csv; done
+wrote round1.csv
+wrote round2.csv
+...
+wrote round10.csv
+```
+Then play round 1 according to round1.csv, recording the winners to round1.csv.
+Then play round 2 according to round1.csv, recording the winners to round2.csv.
+...
+up to round 10.
+Then run
+```
+wfsports startfinals
+```
+which will generate round11.csv. Play round 11, record the winners to round11.csv, then
+run
+```
+wfsports next round11.csv
+```
+and proceed as before for single elimination.
+

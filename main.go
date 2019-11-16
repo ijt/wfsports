@@ -9,20 +9,25 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
+var outRound = flag.Int("outround", 1, "output round")
+
 func main() {
 	flag.Parse()
 	if flag.NArg() != 2 {
 		fmt.Println(`usages: 
 
-1. wfsports start names.csv   : generates the first pairings as round1.csv
-2. wfsports next roundN.csv   : generates the next pairings as round{N+1}.csv or declares the winner
-3. wfsports show roundN.csv   : outputs an HTML page displaying the pairings for round N
+1. wfsports start names.csv   			: generates the first pairings as round1.csv
+1a. wfsports -outround=2 start names.csv   	: generates pairings as round2.csv
+2. wfsports next roundN.csv   			: generates the next pairings as round{N+1}.csv or declares the winner
+3. wfsports show roundN.csv   			: outputs an HTML page displaying the pairings for round N
+3. wfsports startfinals  			: generates round11.csv from round1.csv ... round10.csv 
 
 The CSV files do not have headers.
 names.csv has only a single column: the names of the players.
@@ -49,6 +54,9 @@ func run(command, filename string) error {
 
 	case "show":
 		return show(filename)
+
+	case "startfinals":
+		return startfinals()
 
 	default:
 		return fmt.Errorf("unrecognized command: %s, want start or next", command)
@@ -77,7 +85,63 @@ func start(filename string) error {
 	case 1:
 		fmt.Println(names[0], "is the winner!")
 	default:
-		roundFilename := "round1.csv"
+		roundFilename := fmt.Sprintf("round%d.csv", *outRound)
+		if err := generateRoundFile(roundFilename, names); err != nil {
+			return errors.Wrap(err, "generating round file")
+		}
+		fmt.Println("wrote", roundFilename)
+	}
+
+	return nil
+}
+
+type player struct {
+	name string
+	wins int
+}
+
+func startfinals() error {
+	playerWins := make(map[string]int)
+	for i := 1; i <= 10; i++ {
+		filename := fmt.Sprintf("round%d.csv", i)
+		recs, err := getRecords(filename)
+		if err != nil {
+			return errors.Wrap(err, "getting records")
+		}
+		for _, r := range recs {
+			w := r[2]
+			playerWins[w]++
+		}
+	}
+
+	var players []player
+	for p, w := range playerWins {
+		players = append(players, player{name: p, wins: w})
+	}
+
+	// Take the top 32 players
+	if len(players) >= 32 {
+		sort.Slice(players, func(i, j int) bool { return players[i].wins > players[j].wins })
+		players = players[:32]
+	}
+
+	// Randomize order of the names by making them the keys of a map.
+	namesMap := make(map[string]bool)
+	for _, p := range players {
+		namesMap[p.name] = true
+	}
+	var names []string
+	for name := range namesMap {
+		names = append(names, name)
+	}
+
+	switch len(names) {
+	case 0:
+		return errors.New("no players listed")
+	case 1:
+		fmt.Println(names[0], "is the winner!")
+	default:
+		roundFilename := "round11.csv"
 		if err := generateRoundFile(roundFilename, names); err != nil {
 			return errors.Wrap(err, "generating round file")
 		}
