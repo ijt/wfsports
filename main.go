@@ -178,5 +178,5 @@ func getRecords(filename string) ([][]string, error) {
 		recs = append(recs, record)
 		line++
 	}
-	return r.ReadAll()
+	return recs, nil
 }
