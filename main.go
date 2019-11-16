@@ -30,7 +30,7 @@ roundN.csv has three columns: player1,player2,winner.
 	command := flag.Arg(0)
 	filename := flag.Arg(1)
 	if err := run(command, filename); err != nil {
-		fmt.Printf("wfsports: error: ", err)
+		fmt.Printf("wfsports: error: %v\n", err)
 		os.Exit(1)
 	}
 }
