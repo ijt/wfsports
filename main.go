@@ -4,10 +4,12 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -158,5 +160,23 @@ func getRecords(filename string) ([][]string, error) {
 	}
 	defer f.Close()
 	r := csv.NewReader(f)
+	var recs [][]string
+	line := 1
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "reading line of CSv")
+		}
+		for _, name := range record {
+			if len(strings.TrimSpace(name)) == 0 {
+				return nil, fmt.Errorf("empty name encountered on line %d", line)
+			}
+		}
+		recs = append(recs, record)
+		line++
+	}
 	return r.ReadAll()
 }
