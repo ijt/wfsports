@@ -1,7 +1,7 @@
 package main
 
 import (
-	"csv"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"math"
@@ -67,6 +67,8 @@ func start(filename string) error {
 	if err := generateRoundFile("round1.csv", names); err != nil {
 		return errors.Wrap(err, "generating round file")
 	}
+
+	return nil
 }
 
 var roundRx = regexp.MustCompile(`round(\d+).csv`)
@@ -102,6 +104,7 @@ func next(doneRoundFilename string) error {
 		return errors.Wrap(err, "generating round file")
 	}
 
+	return nil
 }
 
 func generateRoundFile(roundFilename string, names []string) error {
@@ -112,14 +115,18 @@ func generateRoundFile(roundFilename string, names []string) error {
 	defer roundFile.Close()
 	n := roundDownToPowerOfTwo(len(names))
 	// Output pairings so that n players are playing.
-	for i := 0; i < n; i += 2 {
-		fmt.Fprintf(roundFile, "%s,%s,\n", names[i], names[i+1])
+	if n > 1 {
+		for i := 0; i < n; i += 2 {
+			fmt.Fprintf(roundFile, "%s,%s,\n", names[i], names[i+1])
+		}
 	}
 
 	// Output trivial matches where the remaining players play against themselves and win.
 	for i := n; i < len(names); i++ {
 		fmt.Fprintf(roundFile, "%s,%s,%s\n", names[i], names[i], names[i])
 	}
+
+	return nil
 }
 
 // roundDownToPowerOfTwo finds the closest power of 2 below n.
@@ -130,7 +137,7 @@ func roundDownToPowerOfTwo(k int) int {
 func getRecords(filename string) ([][]string, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return errors.Wrap(err, "opening CSV file")
+		return nil, errors.Wrap(err, "opening CSV file")
 	}
 	defer f.Close()
 	r := csv.NewReader(f)
