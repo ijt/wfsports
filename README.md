@@ -22,3 +22,9 @@ Once they play each other, you as the organizer get to add the winners'
 names as in round1, and repeat running `wfsports next round2.csv` and
 repeat the process until someone wins the whole tournament.
 
+To display the players for round N on the projector, run this (on Mac):
+```
+$ wfsports show roundN.csv
+$ open table.html
+```
+

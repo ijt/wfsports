@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"html/template"
 	"io"
 	"math"
 	"os"
@@ -19,8 +20,9 @@ func main() {
 	if flag.NArg() != 2 {
 		fmt.Println(`usages: 
 
-1. wfsports start names.csv
-2. wfsports next roundN.csv
+1. wfsports start names.csv   : generates the first pairings as round1.csv
+2. wfsports next roundN.csv   : generates the next pairings as round{N+1}.csv or declares the winner
+3. wfsports show roundN.csv   : outputs an HTML page displaying the pairings for round N
 
 The CSV files do not have headers.
 names.csv has only a single column: the names of the players.
@@ -44,6 +46,9 @@ func run(command, filename string) error {
 
 	case "next":
 		return next(filename)
+
+	case "show":
+		return show(filename)
 
 	default:
 		return fmt.Errorf("unrecognized command: %s, want start or next", command)
@@ -123,6 +128,81 @@ func next(doneRoundFilename string) error {
 		fmt.Println("wrote", roundFilename)
 	}
 
+	return nil
+}
+
+func show(roundFilename string) error {
+	recs, err := getRecords(roundFilename)
+	if err != nil {
+		return errors.Wrap(err, "getting records")
+	}
+
+	for i := range recs {
+		// Eliminate the winner column, because we aren't displaying winners here.
+		recs[i] = recs[i][:2]
+	}
+
+	t, err := template.New("show").Parse(`
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#players {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#players td, #customers th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#players tr:nth-child(even){background-color: #f2f2f2;}
+
+#players tr:hover {background-color: #ddd;}
+
+#players th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #4CAF50;
+  color: white;
+}
+</style>
+</head>
+<body>
+
+<table id="players">
+  <tr>
+    <th>Player 1</th>
+    <th>Player 2</th>
+  </tr>
+{{range .}}
+  <tr>
+    {{range .}}
+      <td>{{.}}</td>
+    {{end}}
+  </tr>
+{{end}}
+</table>
+
+</body>
+</html>
+`)
+	if err != nil {
+		return errors.Wrap(err, "parsing HTML template")
+	}
+	htmlFilename := "table.html"
+	f, err := os.Create(htmlFilename)
+	if err != nil {
+		return errors.Wrap(err, "creating HTML output file")
+	}
+	defer f.Close()
+	if err := t.Execute(f, recs); err != nil {
+		return errors.Wrap(err, "executing template")
+	}
+	fmt.Println("wrote", htmlFilename)
 	return nil
 }
 
